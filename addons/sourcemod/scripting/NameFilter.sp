@@ -14,9 +14,9 @@ int g_iBlockNameChangeEvents[MAXPLAYERS + 1] = {0, ...};
 public Plugin myinfo =
 {
 	name = "NameFilter",
-	author = "BotoX",
+	author = "BotoX, .Rushaway",
 	description = "Filters player names",
-	version = "1.0"
+	version = "1.1"
 }
 
 public void OnPluginStart()
@@ -116,27 +116,29 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 	}
 
 	bool bGagged = BaseComm_IsClientGagged(client);
-	if(FilterName(client, sNewName) || bGagged)
+	if (IsValidClient(client) && IsClientInGame(client))
 	{
-		if(StrEqual(sOldName, sNewName) || bGagged)
+		if(FilterName(client, sNewName) || bGagged)
 		{
+			if(StrEqual(sOldName, sNewName) || bGagged)
+			{
+				g_iBlockNameChangeEvents[client] = 3;
+				SetClientName(client, sOldName);
+				return Plugin_Handled;
+			}
+
 			g_iBlockNameChangeEvents[client] = 3;
 			SetClientName(client, sOldName);
+
+			DataPack pack = new DataPack();
+			pack.WriteCell(client);
+			pack.WriteString(sNewName);
+
+			CreateTimer(0.1, Timer_ChangeName, pack);
+
 			return Plugin_Handled;
 		}
-
-		g_iBlockNameChangeEvents[client] = 3;
-		SetClientName(client, sOldName);
-
-		DataPack pack = new DataPack();
-		pack.WriteCell(client);
-		pack.WriteString(sNewName);
-
-		CreateTimer(0.1, Timer_ChangeName, pack);
-
-		return Plugin_Handled;
 	}
-
 	return Plugin_Continue;
 }
 
@@ -347,4 +349,13 @@ stock bool TerminateNameUTF8(char[] name)
 		}
 	}
 	return false;
+}
+
+bool IsValidClient(int client, bool nobots = true)
+{
+	if (client <= 0 || client > MaxClients || !IsClientConnected(client) || (nobots && IsFakeClient(client)))
+	{
+		return false;
+	}
+	return IsClientInGame(client);
 }
