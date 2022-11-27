@@ -16,7 +16,7 @@ public Plugin myinfo =
 	name = "NameFilter",
 	author = "BotoX, .Rushaway",
 	description = "Filters player names",
-	version = "1.1"
+	version = "1.1.0"
 }
 
 public void OnPluginStart()
