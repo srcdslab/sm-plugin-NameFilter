@@ -1,0 +1,46 @@
+"Phrases"
+{
+	"Usage"
+	{
+		"en" "{green}[SM] {white}Usage: sm_forcename <currentname> <forcedname>"
+	}
+	"InvalidSteamID"
+	{
+		"en" "{green}[SM] {white}This command can't be used on a player without a SteamID."
+	}
+	"ForcedName"
+	{
+		"#format" "{1:s},{2:s},{3:s}"
+		"en" "{green}[SM] {white}Forced name {1} on player {2} ({3})"
+	}
+	"NameDeleted"
+	{
+		"en" "{green}[SM] {white}Name has been deleted!"
+	}
+	"MenuTitle"
+	{
+		"en" "Forced names:"
+	}
+	"MenuEmpty"
+	{
+		"en" "There are no forced names!"
+	}
+	"MenuContent"
+	{
+		"#format" "{1:s}"
+		"en" "{1}"
+	}
+	"SubMenuTitle"
+	{
+		"en" "Details about this forced name:"
+	}
+	"SubMenuContent"
+	{
+		"#format" "{1:s},{2:s},{3:s},{4:s}"
+		"en" "\nForced name: {1}\nOriginal name: {2}\nAdmin name: {3}\nTime: {4}"
+	}
+	"SubMenuDeleteName"
+	{
+		"en" "Choose to delete the name."
+	}
+}

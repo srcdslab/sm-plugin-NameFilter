@@ -1,12 +1,18 @@
 #include <sdktools>
 #include <regex>
 #include <basecomm>
+#include <multicolors>
 
 #pragma semicolon 1
 #pragma newdecls required
 
+KeyValues g_Kv;
+StringMap g_SMsteamID;
+
+char g_sFilePath[PLATFORM_MAX_PATH], g_sSteamID[32], g_sForcedName[64], g_sOriginalName[64], g_sAdminName[64], g_sTime[32];
+
 Regex g_FilterExpr;
-char g_FilterChar[2] = "";
+char g_sFilterChar[2] = "";
 ArrayList g_BannedExprs;
 ArrayList g_ReplacementNames;
 int g_iBlockNameChangeEvents[MAXPLAYERS + 1] = {0, ...};
@@ -15,12 +21,19 @@ public Plugin myinfo =
 {
 	name = "NameFilter",
 	author = "BotoX, .Rushaway",
-	description = "Filters player names",
-	version = "1.1.0"
+	description = "Filters player names + Force names",
+	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
+	version = "2.0.0"
 }
 
 public void OnPluginStart()
 {
+	LoadTranslations("common.phrases");
+	LoadTranslations("namefilter.phrases");
+
+	RegAdminCmd("sm_forcename", Command_ForceName, ADMFLAG_BAN, "Force a player's name permanently.");
+	RegAdminCmd("sm_forcednames", Command_ForcedNames, ADMFLAG_BAN, "View all forced names in a menu.");
+
 	HookEvent("player_changename", Event_ChangeName, EventHookMode_Pre);
 	HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
 
@@ -31,6 +44,14 @@ public void OnPluginStart()
 		if(IsClientConnected(i))
 			OnClientConnected(i);
 	}
+}
+
+public void OnMapStart()
+{
+	delete g_SMsteamID;
+	g_SMsteamID = new StringMap();
+
+	GetNamesFromCfg();
 }
 
 public void OnClientConnected(int client)
@@ -45,6 +66,21 @@ public void OnClientConnected(int client)
 
 	if(FilterName(client, sName))
 		SetClientName(client, sName);
+
+	if (!IsValidClient(client))
+		CreateTimer(2.0, CheckClientName, GetClientUserId(client));
+}
+
+public Action CheckClientName(Handle timer, int userid)
+{
+	int client = GetClientOfUserId(userid);
+
+	if (client)
+	{
+		if (GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
+			SetClientName(client, g_sForcedName);
+	}
+	return Plugin_Stop;
 }
 
 public void OnClientPutInServer(int client)
@@ -72,7 +108,201 @@ public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcas
 		return Plugin_Handled;
 	}
 
+	if (!IsValidClient(client)) 
+	{
+		char NewName[64];
+		event.GetString("newname", NewName, sizeof(NewName));
+		if (GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
+		{
+			if (!StrEqual(NewName, g_sForcedName, false))
+				SetClientName(client, g_sForcedName);
+		}
+	}
+
 	return Plugin_Continue;
+}
+
+public Action Command_ForceName(int client, int args)
+{
+	char Arg1[64], Arg2[64], TargetName[64];
+
+	if (args != 2)
+	{
+		CReplyToCommand(client, "%t", "Usage");
+		return Plugin_Handled;
+	}
+
+	GetCmdArg(1, Arg1, sizeof(Arg1));
+	GetCmdArg(2, Arg2, sizeof(Arg2));
+
+	int g_iTarget = FindTarget(client, Arg1, true);
+
+	if (g_iTarget == -1)
+		return Plugin_Handled;
+
+	GetClientName(client, g_sAdminName, sizeof(g_sAdminName));
+
+	if (client <= 0)
+		Format(g_sAdminName, sizeof(g_sAdminName), "Console/Server");
+
+	GetClientName(g_iTarget, TargetName, sizeof(TargetName));
+
+	if (!GetClientAuthId(g_iTarget, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)))
+	{
+		CReplyToCommand(client, "%t", "InvalidSteamID");
+		return Plugin_Handled;
+	}
+
+	CReplyToCommand(client, "%t", "ForcedName", Arg2, TargetName, g_sSteamID); 
+
+	SetClientName(g_iTarget, Arg2);
+
+	SetUpKeyValues();
+	g_Kv.JumpToKey(g_sSteamID, true);
+	g_Kv.SetString("OriginalName", TargetName);
+	g_Kv.SetString("ForcedName", Arg2);
+	g_SMsteamID.SetString(g_sSteamID, Arg2);
+	g_Kv.SetString("AdminName", g_sAdminName);
+	FormatTime(g_sTime, sizeof(g_sTime), "%d.%m.%Y %R", GetTime());
+	g_Kv.SetString("Date", g_sTime);
+	g_Kv.Rewind();
+	g_Kv.ExportToFile(g_sFilePath);
+	delete g_Kv;
+
+	return Plugin_Handled;
+}
+
+public Action Command_ForcedNames(int client, int args)
+{
+	char MenuBuffer[128], MenuBuffer2[32], MenuBuffer3[128];
+
+	Menu MainMenu = new Menu(MenuHandle);
+
+	Format(MenuBuffer, sizeof(MenuBuffer), "%T", "MenuTitle", client);
+	MainMenu.SetTitle(MenuBuffer);
+
+	SetUpKeyValues();
+	if (!g_Kv.GotoFirstSubKey())
+	{
+		Format(MenuBuffer2, sizeof(MenuBuffer2), "%T", "MenuEmpty", client);
+		MainMenu.AddItem("", MenuBuffer2, ITEMDRAW_DISABLED);
+	} else {
+		do
+		{
+			g_Kv.GetSectionName(g_sSteamID, sizeof(g_sSteamID));
+			g_Kv.GetString("ForcedName", g_sForcedName, sizeof(g_sForcedName));
+			// Check if g_sForcedName is empty, if yes then skip this entry
+			if (g_sForcedName[0] == '\0')
+				continue;
+			Format(MenuBuffer3, sizeof(MenuBuffer3), "%T", "MenuContent", client, g_sForcedName);
+			MainMenu.AddItem(g_sSteamID, MenuBuffer3);
+		}
+		while(g_Kv.GotoNextKey());
+	}
+	delete g_Kv;
+
+	MainMenu.ExitButton = true;
+	MainMenu.Display(client, MENU_TIME_FOREVER);
+	
+	return Plugin_Handled;
+}
+
+int MenuHandle(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char MenuBuffer[128], MenuChoice[32], MenuBuffer2[128], MenuBuffer3[32];
+
+		Menu SubMenu = new Menu(SubMenuHandle);
+
+		Format(MenuBuffer, sizeof(MenuBuffer), "%T", "SubMenuTitle", param1);
+		SubMenu.SetTitle(MenuBuffer);
+
+		menu.GetItem(param2, MenuChoice, sizeof(MenuChoice));
+
+		SetUpKeyValues();
+		g_Kv.JumpToKey(MenuChoice, false);
+		g_Kv.GetString("ForcedName", g_sForcedName, sizeof(g_sForcedName));
+		g_Kv.GetString("OriginalName", g_sOriginalName, sizeof(g_sOriginalName));
+		g_Kv.GetString("AdminName", g_sAdminName, sizeof(g_sAdminName));
+		g_Kv.GetString("Date", g_sTime, sizeof(g_sTime));
+		delete g_Kv;
+
+		Format(MenuBuffer2, sizeof(MenuBuffer2), "%T", "SubMenuContent", param1, g_sForcedName, g_sOriginalName, g_sAdminName, g_sTime);
+		Format(MenuBuffer3, sizeof(MenuBuffer3), "%T", "SubMenuDeleteName", param1);
+		SubMenu.AddItem("0", MenuBuffer2, ITEMDRAW_DISABLED);
+		SubMenu.AddItem(MenuChoice, MenuBuffer3);
+
+		SubMenu.ExitBackButton = true;
+		SubMenu.Display(param1, MENU_TIME_FOREVER);
+	}
+
+	else if (action == MenuAction_End)
+		delete menu;
+
+	return 0;
+}
+
+int SubMenuHandle(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		switch(param2)
+		{
+			case 1:
+			{
+				char MenuChoice[32];
+				menu.GetItem(param2, MenuChoice, sizeof(MenuChoice));
+				SetUpKeyValues();
+				g_Kv.JumpToKey(MenuChoice, false);
+				g_Kv.DeleteThis();
+				g_Kv.Rewind();
+				g_Kv.ExportToFile(g_sFilePath);
+				delete g_Kv;
+				g_SMsteamID.Remove(MenuChoice);
+				CReplyToCommand(param1, "%t", "NameDeleted");
+				Command_ForcedNames(param1, param2);
+			}
+		}
+	}
+
+	if (action == MenuAction_Cancel)
+	{
+		if (param2 == MenuCancel_ExitBack)
+			Command_ForcedNames(param1, param2);
+	}
+
+	else if (action == MenuAction_End)
+		delete menu;
+
+	return 0;
+}
+
+void GetNamesFromCfg()
+{
+	SetUpKeyValues();
+	g_Kv.GotoFirstSubKey();
+	do
+	{
+		g_Kv.GetSectionName(g_sSteamID, sizeof(g_sSteamID));
+		g_Kv.GetString("ForcedName", g_sForcedName, sizeof(g_sForcedName));
+		g_SMsteamID.SetString(g_sSteamID, g_sForcedName);
+	}
+	while(g_Kv.GotoNextKey());
+	delete g_Kv;
+}
+
+void SetUpKeyValues()
+{
+	delete g_Kv;
+	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
+	g_Kv = new KeyValues("NameFilter");
+
+	if(!g_Kv.ImportFromFile(g_sFilePath))
+	{
+		delete g_Kv;
+		SetFailState("ImportFromFile() failed!");
+	}
 }
 
 public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
@@ -175,66 +405,66 @@ void LoadConfig()
 	delete g_BannedExprs;
 	delete g_ReplacementNames;
 
-	static char sConfigFile[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, sConfigFile, sizeof(sConfigFile), "configs/NameFilter.cfg");
-	if(!FileExists(sConfigFile))
-		SetFailState("Could not find config: \"%s\"", sConfigFile);
+	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
+	if(!FileExists(g_sFilePath))
+		SetFailState("Could not find config: \"%s\"", g_sFilePath);
 
-	KeyValues Config = new KeyValues("NameFilter");
-	if(!Config.ImportFromFile(sConfigFile))
+	delete g_Kv;
+	g_Kv = new KeyValues("NameFilter");
+	if(!g_Kv.ImportFromFile(g_sFilePath))
 	{
-		delete Config;
+		delete g_Kv;
 		SetFailState("ImportFromFile() failed!");
 	}
 
-	Config.GetString("censor", g_FilterChar, 2, "*");
+	g_Kv.GetString("censor", g_sFilterChar, 2, "*");
 
 	static char sBuffer[256];
-	Config.GetString("filter", sBuffer, 256);
+	g_Kv.GetString("filter", sBuffer, 256);
 
 	char sError[256];
 	RegexError iError;
 	g_FilterExpr = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
 	if(iError != REGEX_ERROR_NONE)
 	{
-		delete Config;
+		delete g_Kv;
 		SetFailState(sError);
 	}
 
 	g_BannedExprs = new ArrayList();
-	if(Config.JumpToKey("banned"))
+	if(g_Kv.JumpToKey("banned"))
 	{
-		if(Config.GotoFirstSubKey(false))
+		if(g_Kv.GotoFirstSubKey(false))
 		{
 			do
 			{
-				Config.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
+				g_Kv.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
 
 				Handle hRegex = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
 				if(iError != REGEX_ERROR_NONE)
 					LogError("Error parsing banned filter: %s", sError);
 				else
 					g_BannedExprs.Push(hRegex);
-			} while(Config.GotoNextKey(false));
-			Config.GoBack();
+			} while(g_Kv.GotoNextKey(false));
+			g_Kv.GoBack();
 		}
-		Config.GoBack();
+		g_Kv.GoBack();
 	}
 
 	g_ReplacementNames = new ArrayList(ByteCountToCells(MAX_NAME_LENGTH));
-	if(Config.JumpToKey("names"))
+	if(g_Kv.JumpToKey("names"))
 	{
-		if(Config.GotoFirstSubKey(false))
+		if(g_Kv.GotoFirstSubKey(false))
 		{
 			do
 			{
-				Config.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
+				g_Kv.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
 
 				g_ReplacementNames.PushString(sBuffer);
-			} while(Config.GotoNextKey(false));
-			Config.GoBack();
+			} while(g_Kv.GotoNextKey(false));
+			g_Kv.GoBack();
 		}
-		Config.GoBack();
+		g_Kv.GoBack();
 	}
 
 	if(!g_ReplacementNames.Length)
@@ -243,7 +473,7 @@ void LoadConfig()
 		g_ReplacementNames.PushString("BAD_NAME");
 	}
 
-	delete Config;
+	delete g_Kv;
 }
 
 bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
@@ -280,7 +510,7 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 			char sMatch[MAX_NAME_LENGTH];
 			if(GetRegexSubString(g_FilterExpr, i, sMatch, sizeof(sMatch)))
 			{
-				if(ReplaceStringEx(sName, Length, sMatch, g_FilterChar) != -1)
+				if(ReplaceStringEx(sName, Length, sMatch, g_sFilterChar) != -1)
 					bChanged = true;
 			}
 		}
