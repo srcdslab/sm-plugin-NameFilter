@@ -23,7 +23,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.0"
+	version = "2.0.1"
 }
 
 public void OnPluginStart()
@@ -295,7 +295,7 @@ void GetNamesFromCfg()
 void SetUpKeyValues()
 {
 	delete g_Kv;
-	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
+	BuildFilePath();
 	g_Kv = new KeyValues("NameFilter");
 
 	if(!g_Kv.ImportFromFile(g_sFilePath))
@@ -405,8 +405,7 @@ void LoadConfig()
 	delete g_BannedExprs;
 	delete g_ReplacementNames;
 
-	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
-	if(!FileExists(g_sFilePath))
+	if (!BuildFilePath())
 		SetFailState("Could not find config: \"%s\"", g_sFilePath);
 
 	delete g_Kv;
@@ -579,6 +578,21 @@ stock bool TerminateNameUTF8(char[] name)
 		}
 	}
 	return false;
+}
+
+stock bool BuildFilePath()
+{
+	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/NameFilter.cfg");
+
+	// Retro compatibility
+	if(!FileExists(g_sFilePath))
+		BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
+
+	// Verify if the path exist as lowercase (linux srcds)
+	if(!FileExists(g_sFilePath))
+		return false;
+
+	return true;
 }
 
 bool IsValidClient(int client, bool nobots = true)
