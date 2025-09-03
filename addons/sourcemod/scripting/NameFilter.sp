@@ -26,7 +26,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.2"
+	version = "2.0.3"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -50,6 +50,10 @@ public void OnPluginStart()
 
 	HookEvent("player_changename", Event_ChangeName, EventHookMode_Pre);
 	HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
+
+	EnsureNameFilterInit();
+	LoadConfig();
+	GetNamesFromCfg();
 
 	if (!g_bLateLoaded)
 		return;
@@ -661,6 +665,18 @@ stock bool BuildFilePath()
 
 	NF_DebugLog("Resolved config path: %s", g_sFilePath);
 	return true;
+}
+
+stock void EnsureNameFilterInit()
+{
+	if (!g_SMsteamID)
+		g_SMsteamID = new StringMap();
+
+	if (!g_BannedExprs)
+		g_BannedExprs = new ArrayList();
+
+	if (!g_ReplacementNames)
+		g_ReplacementNames = new ArrayList(ByteCountToCells(MAX_NAME_LENGTH));
 }
 
 bool IsValidClient(int client, bool nobots = true)
