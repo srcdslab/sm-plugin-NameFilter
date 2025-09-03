@@ -16,6 +16,9 @@ char g_sFilterChar[2] = "";
 ArrayList g_BannedExprs;
 ArrayList g_ReplacementNames;
 int g_iBlockNameChangeEvents[MAXPLAYERS + 1] = {0, ...};
+ConVar g_hNFDebug;
+bool g_bNFDebug = false;
+bool g_bLateLoaded = false;
 
 public Plugin myinfo =
 {
@@ -23,7 +26,13 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.1"
+	version = "2.0.2"
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	g_bLateLoaded = late;
+	return APLRes_Success;
 }
 
 public void OnPluginStart()
@@ -33,17 +42,29 @@ public void OnPluginStart()
 
 	RegAdminCmd("sm_forcename", Command_ForceName, ADMFLAG_BAN, "Force a player's name permanently.");
 	RegAdminCmd("sm_forcednames", Command_ForcedNames, ADMFLAG_BAN, "View all forced names in a menu.");
+	RegAdminCmd("sm_namefilter_reload", Command_NameFilterReload, ADMFLAG_CONFIG, "Reload NameFilter configuration.");
+
+	g_hNFDebug = CreateConVar("sm_namefilter_debug", "0", "Enable NameFilter debug logs", FCVAR_NONE, true, 0.0, true, 1.0);
+	g_bNFDebug = g_hNFDebug.BoolValue;
+	g_hNFDebug.AddChangeHook(OnCvarChanged);
 
 	HookEvent("player_changename", Event_ChangeName, EventHookMode_Pre);
 	HookUserMessage(GetUserMessageId("SayText2"), UserMessage_SayText2, true);
 
-	LoadConfig();
+	if (!g_bLateLoaded)
+		return;
 
-	for(int i = 1; i <= MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientConnected(i))
+		if (IsClientConnected(i))
 			OnClientConnected(i);
 	}
+}
+
+public void OnCvarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	g_bNFDebug = g_hNFDebug.BoolValue;
+	LogMessage("[NameFilter] Debug %s", g_bNFDebug ? "ENABLED" : "DISABLED");
 }
 
 public void OnMapStart()
@@ -51,6 +72,7 @@ public void OnMapStart()
 	delete g_SMsteamID;
 	g_SMsteamID = new StringMap();
 
+	LoadConfig();
 	GetNamesFromCfg();
 }
 
@@ -58,14 +80,19 @@ public void OnClientConnected(int client)
 {
 	g_iBlockNameChangeEvents[client] = 0;
 
-	if(IsFakeClient(client))
+	if (IsFakeClient(client))
 		return;
 
 	char sName[MAX_NAME_LENGTH];
 	GetClientName(client, sName, sizeof(sName));
 
-	if(FilterName(client, sName))
-		SetClientName(client, sName);
+	if (FilterName(client, sName))
+	{
+		DataPack pack = new DataPack();
+		pack.WriteCell(client);
+		pack.WriteString(g_sForcedName);
+		RequestFrame(OnFrameRequested, pack);
+	}
 
 	if (!IsValidClient(client))
 		CreateTimer(2.0, CheckClientName, GetClientUserId(client));
@@ -75,23 +102,39 @@ public Action CheckClientName(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
 
-	if (client)
+	if (client && GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
 	{
-		if (GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
-			SetClientName(client, g_sForcedName);
+		DataPack pack = new DataPack();
+		pack.WriteCell(client);
+		pack.WriteString(g_sForcedName);
+		RequestFrame(OnFrameRequested, pack);
 	}
 	return Plugin_Stop;
 }
 
+stock void OnFrameRequested(DataPack pack)
+{
+	pack.Reset();
+	int client = pack.ReadCell();
+	char sName[MAX_NAME_LENGTH];
+	pack.ReadString(sName, sizeof(sName));
+	delete pack;
+
+	if (!IsValidClient(client))
+		return;
+
+	SetClientName(client, sName);
+}
+
 public void OnClientPutInServer(int client)
 {
-	if(IsFakeClient(client))
+	if (IsFakeClient(client))
 		return;
 
 	char sName[MAX_NAME_LENGTH];
 	GetClientName(client, sName, sizeof(sName));
 
-	if(FilterName(client, sName))
+	if (FilterName(client, sName))
 	{
 		g_iBlockNameChangeEvents[client] = 2;
 		SetClientName(client, sName);
@@ -101,14 +144,14 @@ public void OnClientPutInServer(int client)
 public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if(g_iBlockNameChangeEvents[client])
+	if (g_iBlockNameChangeEvents[client])
 	{
 		g_iBlockNameChangeEvents[client]--;
 		SetEventBroadcast(event, true);
 		return Plugin_Handled;
 	}
 
-	if (!IsValidClient(client)) 
+	if (!IsValidClient(client))
 	{
 		char NewName[64];
 		event.GetString("newname", NewName, sizeof(NewName));
@@ -153,7 +196,7 @@ public Action Command_ForceName(int client, int args)
 		return Plugin_Handled;
 	}
 
-	CReplyToCommand(client, "%t", "ForcedName", Arg2, TargetName, g_sSteamID); 
+	CReplyToCommand(client, "%t", "ForcedName", Arg2, TargetName, g_sSteamID);
 
 	SetClientName(g_iTarget, Arg2);
 
@@ -203,7 +246,14 @@ public Action Command_ForcedNames(int client, int args)
 
 	MainMenu.ExitButton = true;
 	MainMenu.Display(client, MENU_TIME_FOREVER);
-	
+
+	return Plugin_Handled;
+}
+
+public Action Command_NameFilterReload(int client, int args)
+{
+	LoadConfig();
+	CReplyToCommand(client, "[NameFilter] Configuration reloaded.");
 	return Plugin_Handled;
 }
 
@@ -298,16 +348,18 @@ void SetUpKeyValues()
 	BuildFilePath();
 	g_Kv = new KeyValues("NameFilter");
 
-	if(!g_Kv.ImportFromFile(g_sFilePath))
+	if (!g_Kv.ImportFromFile(g_sFilePath))
 	{
 		delete g_Kv;
 		SetFailState("ImportFromFile() failed!");
 	}
+
+	NF_DebugLog("Using config path: %s", g_sFilePath);
 }
 
 public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
 {
-	if(!reliable)
+	if (!reliable)
 		return Plugin_Continue;
 
 	int client;
@@ -315,11 +367,11 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 	char sOldName[MAX_NAME_LENGTH];
 	char sNewName[MAX_NAME_LENGTH];
 
-	if(GetUserMessageType() == UM_Protobuf)
+	if (GetUserMessageType() == UM_Protobuf)
 	{
 		PbReadString(msg, "msg_name", sMessage, sizeof(sMessage));
 
-		if(!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
+		if (!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
 			return Plugin_Continue;
 
 		client = PbReadInt(msg, "ent_idx");
@@ -332,14 +384,14 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 		BfReadByte(msg);
 		BfReadString(msg, sMessage, sizeof(sMessage));
 
-		if(!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
+		if (!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
 			return Plugin_Continue;
 
 		BfReadString(msg, sOldName, sizeof(sOldName));
 		BfReadString(msg, sNewName, sizeof(sNewName));
 	}
 
-	if(g_iBlockNameChangeEvents[client])
+	if (g_iBlockNameChangeEvents[client])
 	{
 		g_iBlockNameChangeEvents[client]--;
 		return Plugin_Handled;
@@ -348,9 +400,9 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 	bool bGagged = BaseComm_IsClientGagged(client);
 	if (IsValidClient(client) && IsClientInGame(client))
 	{
-		if(FilterName(client, sNewName) || bGagged)
+		if (FilterName(client, sNewName) || bGagged)
 		{
-			if(StrEqual(sOldName, sNewName) || bGagged)
+			if (StrEqual(sOldName, sNewName) || bGagged)
 			{
 				g_iBlockNameChangeEvents[client] = 3;
 				SetClientName(client, sOldName);
@@ -390,12 +442,12 @@ public Action Timer_ChangeName(Handle timer, any data)
 
 void LoadConfig()
 {
-	if(g_FilterExpr != INVALID_HANDLE)
+	if (g_FilterExpr != INVALID_HANDLE)
 		CloseHandle(g_FilterExpr);
 
-	if(g_BannedExprs)
+	if (g_BannedExprs)
 	{
-		for(int i = 0; i < g_BannedExprs.Length; i++)
+		for (int i = 0; i < g_BannedExprs.Length; i++)
 		{
 			Handle hRegex = g_BannedExprs.Get(i);
 			CloseHandle(hRegex);
@@ -410,37 +462,39 @@ void LoadConfig()
 
 	delete g_Kv;
 	g_Kv = new KeyValues("NameFilter");
-	if(!g_Kv.ImportFromFile(g_sFilePath))
+	if (!g_Kv.ImportFromFile(g_sFilePath))
 	{
 		delete g_Kv;
 		SetFailState("ImportFromFile() failed!");
 	}
 
 	g_Kv.GetString("censor", g_sFilterChar, 2, "*");
+	NF_DebugLog("Loaded censor: '%s'", g_sFilterChar);
 
 	static char sBuffer[256];
 	g_Kv.GetString("filter", sBuffer, 256);
+	NF_DebugLog("Loaded filter regex: %s", sBuffer);
 
 	char sError[256];
 	RegexError iError;
 	g_FilterExpr = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
-	if(iError != REGEX_ERROR_NONE)
+	if (iError != REGEX_ERROR_NONE)
 	{
 		delete g_Kv;
 		SetFailState(sError);
 	}
 
 	g_BannedExprs = new ArrayList();
-	if(g_Kv.JumpToKey("banned"))
+	if (g_Kv.JumpToKey("banned"))
 	{
-		if(g_Kv.GotoFirstSubKey(false))
+		if (g_Kv.GotoFirstSubKey(false))
 		{
 			do
 			{
 				g_Kv.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
-
+				NF_DebugLog("Loaded banned regex: %s", sBuffer);
 				Handle hRegex = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
-				if(iError != REGEX_ERROR_NONE)
+				if (iError != REGEX_ERROR_NONE)
 					LogError("Error parsing banned filter: %s", sError);
 				else
 					g_BannedExprs.Push(hRegex);
@@ -451,14 +505,14 @@ void LoadConfig()
 	}
 
 	g_ReplacementNames = new ArrayList(ByteCountToCells(MAX_NAME_LENGTH));
-	if(g_Kv.JumpToKey("names"))
+	if (g_Kv.JumpToKey("names"))
 	{
-		if(g_Kv.GotoFirstSubKey(false))
+		if (g_Kv.GotoFirstSubKey(false))
 		{
 			do
 			{
 				g_Kv.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
-
+				NF_DebugLog("Loaded replacement name: %s", sBuffer);
 				g_ReplacementNames.PushString(sBuffer);
 			} while(g_Kv.GotoNextKey(false));
 			g_Kv.GoBack();
@@ -466,11 +520,13 @@ void LoadConfig()
 		g_Kv.GoBack();
 	}
 
-	if(!g_ReplacementNames.Length)
+	if (!g_ReplacementNames.Length)
 	{
 		LogError("Warning, you didn't specify any replacement names!");
 		g_ReplacementNames.PushString("BAD_NAME");
 	}
+
+	NF_DebugLog("Init done. Banned: %d, Replacements: %d", g_BannedExprs.Length, g_ReplacementNames.Length);
 
 	delete g_Kv;
 }
@@ -480,82 +536,93 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 	bool bChanged = false;
 	RegexError iError;
 
+	NF_DebugLog("FilterName in: '%s' (client %d)", sName, client);
+
 	// SourceMod Regex bug
 	int Guard;
-	for(Guard = 0; Guard < 100; Guard++)
+	for (Guard = 0; Guard < 100; Guard++)
 	{
 		if (!strlen(sName))
 			break;
 
 		int Match = MatchRegex(g_FilterExpr, sName, iError);
-		if(iError != REGEX_ERROR_NONE)
+		if (iError != REGEX_ERROR_NONE)
 		{
-			if(iError == REGEX_ERROR_BADUTF8)
+			if (iError == REGEX_ERROR_BADUTF8)
 			{
 				sName[0] = 0;
 				bChanged = true;
+				NF_DebugLog("BAD UTF8 detected, clearing name");
 			}
 			else
+			{
 				LogError("Regex Error: %d", iError);
+				NF_DebugLog("Regex error while matching filter: %d", iError);
+			}
 
 			break;
 		}
 
-		if(Match <= 0)
+		if (Match <= 0)
 			break;
 
-		for(int i = 0; i < Match; i++)
+		for (int i = 0; i < Match; i++)
 		{
 			char sMatch[MAX_NAME_LENGTH];
-			if(GetRegexSubString(g_FilterExpr, i, sMatch, sizeof(sMatch)))
+			if (GetRegexSubString(g_FilterExpr, i, sMatch, sizeof(sMatch)))
 			{
-				if(ReplaceStringEx(sName, Length, sMatch, g_sFilterChar) != -1)
+				NF_DebugLog("Matched substring: '%s'", sMatch);
+				if (ReplaceStringEx(sName, Length, sMatch, g_sFilterChar) != -1)
 					bChanged = true;
+				NF_DebugLog("After replace -> '%s'", sName);
 			}
 		}
 	}
-	if(Guard == 100)
+	if (Guard == 100)
 		LogError("SourceMod Regex failed! \"%s\"", sName);
 
-	if(g_BannedExprs)
+	if (g_BannedExprs)
 	{
-		for(int i = 0; i < g_BannedExprs.Length; i++)
+		for (int i = 0; i < g_BannedExprs.Length; i++)
 		{
 			if (!strlen(sName))
 				break;
 
 			Handle hRegex = g_BannedExprs.Get(i);
 			int Match = MatchRegex(hRegex, sName, iError);
-			if(iError != REGEX_ERROR_NONE)
+			if (iError != REGEX_ERROR_NONE)
 			{
 				LogError("Regex Error: %d", iError);
 				continue;
 			}
 
-			if(Match <= 0)
+			if (Match <= 0)
 				continue;
 
 			int RandomName = client % g_ReplacementNames.Length;
 			g_ReplacementNames.GetString(RandomName, sName, Length);
+			NF_DebugLog("Banned pattern matched, forcing replacement: '%s'", sName);
 			return true;
 		}
 	}
 
-	if(!bChanged)
+	if (!bChanged)
 		bChanged = TerminateNameUTF8(sName);
 
-	if(bChanged)
+	if (bChanged)
 	{
 		TerminateNameUTF8(sName);
 
-		if(strlen(sName) < 2)
+		if (strlen(sName) < 2)
 		{
 			int RandomName = client % g_ReplacementNames.Length;
 			g_ReplacementNames.GetString(RandomName, sName, Length);
+			NF_DebugLog("Name too short after filter, replacement: '%s'", sName);
 			return true;
 		}
 	}
 
+	NF_DebugLog("FilterName out: changed=%d final='%s'", bChanged, sName);
 	return bChanged;
 }
 
@@ -563,12 +630,12 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 stock bool TerminateNameUTF8(char[] name)
 {
 	int len = strlen(name);
-	for(int i = 0; i < len; i++)
+	for (int i = 0; i < len; i++)
 	{
 		int bytes = IsCharMB(name[i]);
-		if(bytes > 1)
+		if (bytes > 1)
 		{
-			if(len - i < bytes)
+			if (len - i < bytes)
 			{
 				name[i] = '\0';
 				return true;
@@ -585,13 +652,14 @@ stock bool BuildFilePath()
 	BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/NameFilter.cfg");
 
 	// Retro compatibility
-	if(!FileExists(g_sFilePath))
+	if (!FileExists(g_sFilePath))
 		BuildPath(Path_SM, g_sFilePath, sizeof(g_sFilePath), "configs/namefilter.cfg");
 
 	// Verify if the path exist as lowercase (linux srcds)
-	if(!FileExists(g_sFilePath))
+	if (!FileExists(g_sFilePath))
 		return false;
 
+	NF_DebugLog("Resolved config path: %s", g_sFilePath);
 	return true;
 }
 
@@ -602,4 +670,14 @@ bool IsValidClient(int client, bool nobots = true)
 		return false;
 	}
 	return IsClientInGame(client);
+}
+
+stock void NF_DebugLog(const char[] fmt, any ...)
+{
+	if (!g_bNFDebug)
+		return;
+
+	static char buffer[256];
+	VFormat(buffer, sizeof(buffer), fmt, 2);
+	LogMessage("[NameFilter][DEBUG] %s", buffer);
 }
