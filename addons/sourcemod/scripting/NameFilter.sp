@@ -702,10 +702,25 @@ stock void NF_DebugLog(const char[] fmt, any ...)
 stock bool IsNameOnlyWhitespace(const char[] name)
 {
 	int len = strlen(name);
-	for (int i = 0; i < len; i++)
+	int i = 0;
+	bool any = false;
+	while (i < len)
 	{
-		if (name[i] != ' ' && name[i] != '\t' && name[i] != '\n' && name[i] != '\r')
-			return false;
+		// ASCII whitespace
+		if (name[i] == ' ' || name[i] == '\t' || name[i] == '\n' || name[i] == '\r')
+		{
+			any = true;
+			i++;
+			continue;
+		}
+		// Non-breaking space (U+00A0) in UTF-8: 0xC2 0xA0
+		if (i + 1 < len && name[i] == 0xC2 && name[i + 1] == 0xA0)
+		{
+			any = true;
+			i += 2;
+			continue;
+		}
+		return false; // found a non-whitespace code unit/sequence
 	}
-	return len > 0; // Return true only if it contains at least one whitespace character
+	return any; // true only if at least one whitespace and no other chars
 }
