@@ -26,7 +26,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.3"
+	version = "2.0.4"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -94,7 +94,7 @@ public void OnClientConnected(int client)
 	{
 		DataPack pack = new DataPack();
 		pack.WriteCell(client);
-		pack.WriteString(g_sForcedName);
+		pack.WriteString(sName);
 		RequestFrame(OnFrameRequested, pack);
 	}
 
@@ -205,6 +205,7 @@ public Action Command_ForceName(int client, int args)
 	SetClientName(g_iTarget, Arg2);
 
 	SetUpKeyValues();
+
 	g_Kv.JumpToKey(g_sSteamID, true);
 	g_Kv.SetString("OriginalName", TargetName);
 	g_Kv.SetString("ForcedName", Arg2);
@@ -617,11 +618,11 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 	{
 		TerminateNameUTF8(sName);
 
-		if (strlen(sName) < 2)
+		if (strlen(sName) < 2 || IsNameOnlyWhitespace(sName))
 		{
 			int RandomName = client % g_ReplacementNames.Length;
 			g_ReplacementNames.GetString(RandomName, sName, Length);
-			NF_DebugLog("Name too short after filter, replacement: '%s'", sName);
+			NF_DebugLog("Name too short or only whitespace after filter, replacement: '%s'", sName);
 			return true;
 		}
 	}
@@ -696,4 +697,30 @@ stock void NF_DebugLog(const char[] fmt, any ...)
 	static char buffer[256];
 	VFormat(buffer, sizeof(buffer), fmt, 2);
 	LogMessage("[NameFilter][DEBUG] %s", buffer);
+}
+
+stock bool IsNameOnlyWhitespace(const char[] name)
+{
+	int len = strlen(name);
+	int i = 0;
+	bool any = false;
+	while (i < len)
+	{
+		// ASCII whitespace
+		if (name[i] == ' ' || name[i] == '\t' || name[i] == '\n' || name[i] == '\r')
+		{
+			any = true;
+			i++;
+			continue;
+		}
+		// Non-breaking space (U+00A0) in UTF-8: 0xC2 0xA0
+		if (i + 1 < len && name[i] == 0xC2 && name[i + 1] == 0xA0)
+		{
+			any = true;
+			i += 2;
+			continue;
+		}
+		return false; // found a non-whitespace code unit/sequence
+	}
+	return any; // true only if at least one whitespace and no other chars
 }
