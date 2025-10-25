@@ -99,7 +99,7 @@ public void OnClientConnected(int client)
 	}
 
 	if (!IsValidClient(client))
-		CreateTimer(2.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(2.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE | TIMER_DATA_HNDL_CLOSE);
 }
 
 public Action CheckClientName(Handle timer, int userid)
