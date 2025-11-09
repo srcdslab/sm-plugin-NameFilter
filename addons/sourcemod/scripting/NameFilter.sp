@@ -26,7 +26,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.5"
+	version = "2.0.6"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -421,7 +421,7 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 			pack.WriteCell(client);
 			pack.WriteString(sNewName);
 
-			CreateTimer(0.1, Timer_ChangeName, pack, TIMER_FLAG_NO_MAPCHANGE | TIMER_DATA_HNDL_CLOSE);
+			CreateTimer(0.1, Timer_ChangeName, pack, TIMER_FLAG_NO_MAPCHANGE);
 
 			return Plugin_Handled;
 		}
