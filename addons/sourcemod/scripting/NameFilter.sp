@@ -107,7 +107,7 @@ public void OnClientConnected(int client)
 		g_iBlockNameChangeEvents[client] = 2;
 		SetClientName(client, sName);
 	}
-	else if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
+	else if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)) && !StrEqual(sName, g_sForcedName, false))
 	{
 		g_iBlockNameChangeEvents[client] = 2;
 		SetClientName(client, g_sForcedName);
@@ -192,6 +192,8 @@ public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcas
 		{
 			if (!StrEqual(NewName, g_sForcedName, false))
 			{
+				g_iBlockNameChangeEvents[client] = 2;
+ 				SetEventBroadcast(event, true);
 				SetClientName(client, g_sForcedName);
 				CPrintToChat(client, "%t", "ForcedName_ChatInfo");
 			}
@@ -254,7 +256,7 @@ public Action Command_ForceName(int client, int args)
 
 public Action Command_ForcedNames(int client, int args)
 {
-	char MenuBuffer[128], MenuBuffer2[32], MenuBuffer3[128];
+	char MenuBuffer[128], MenuBuffer2[128], MenuBuffer3[128];
 
 	Menu MainMenu = new Menu(MenuHandle);
 
