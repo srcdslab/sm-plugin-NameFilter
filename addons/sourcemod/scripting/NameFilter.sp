@@ -93,19 +93,26 @@ public void OnClientConnected(int client)
 	if (IsFakeClient(client))
 		return;
 
+	if (!IsValidClient(client))
+	{
+		CreateTimer(3.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+		return;
+	}
+
 	char sName[MAX_NAME_LENGTH];
 	GetClientName(client, sName, sizeof(sName));
 
 	if (FilterName(client, sName))
 	{
-		DataPack pack = new DataPack();
-		pack.WriteCell(client);
-		pack.WriteString(sName);
-		RequestFrame(OnFrameRequested, pack);
+		g_iBlockNameChangeEvents[client] = 2;
+		SetClientName(client, sName);
 	}
-
-	if (IsClientConnected(client))
-		CreateTimer(3.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+	else if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
+	{
+		g_iBlockNameChangeEvents[client] = 2;
+		SetClientName(client, g_sForcedName);
+		CPrintToChat(client, "%t", "ForcedName_ChatInfo");
+	}
 }
 
 public Action CheckClientName(Handle timer, int userid)
@@ -139,6 +146,9 @@ stock void OnFrameRequested(DataPack pack)
 
 public void OnClientPutInServer(int client)
 {
+	if (!IsValidClient(client))
+		return;
+
 	if (IsFakeClient(client))
 		return;
 
@@ -152,9 +162,14 @@ public void OnClientPutInServer(int client)
 	}
 	else if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
 	{
-		g_iBlockNameChangeEvents[client] = 2;
-		SetClientName(client, g_sForcedName);
-		CPrintToChat(client, "%t", "ForcedName_ChatInfo");
+
+
+		if (!StrEqual(sName, g_sForcedName, false))
+		{
+			g_iBlockNameChangeEvents[client] = 2;
+			SetClientName(client, g_sForcedName);
+			CPrintToChat(client, "%t", "ForcedName_ChatInfo");
+		}
 	}
 }
 
