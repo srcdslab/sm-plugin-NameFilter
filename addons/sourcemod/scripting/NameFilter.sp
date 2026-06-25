@@ -6,27 +6,33 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-KeyValues g_Kv;
-StringMap g_SMsteamID;
+bool g_bLateLoaded = false;
+bool g_bNFDebug = false;
 
-char g_sFilePath[PLATFORM_MAX_PATH], g_sSteamID[32], g_sForcedName[64], g_sOriginalName[64], g_sAdminName[64], g_sTime[32];
+int g_iBlockNameChangeEvents[MAXPLAYERS + 1] = {0, ...};
 
-Regex g_FilterExpr;
+char g_sAdminName[64];
+char g_sFilePath[PLATFORM_MAX_PATH];
+char g_sForcedName[64];
+char g_sOriginalName[64];
+char g_sSteamID[32];
+char g_sTime[32];
 char g_sFilterChar[2] = "";
+
+ConVar g_hNFDebug;
+Regex g_FilterExpr;
 ArrayList g_BannedExprs;
 ArrayList g_ReplacementNames;
-int g_iBlockNameChangeEvents[MAXPLAYERS + 1] = {0, ...};
-ConVar g_hNFDebug;
-bool g_bNFDebug = false;
-bool g_bLateLoaded = false;
+KeyValues g_Kv;
+StringMap g_SMsteamID;
 
 public Plugin myinfo =
 {
 	name = "NameFilter",
-	author = "BotoX, .Rushaway",
+	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.0.7"
+	version = "2.1.0"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -98,15 +104,29 @@ public void OnClientConnected(int client)
 		RequestFrame(OnFrameRequested, pack);
 	}
 
-	if (!IsValidClient(client))
-		CreateTimer(2.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+	if (IsValidClient(client))
+		CreateTimer(3.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public void OnClientAuthorized(int client, const char[] auth)
+{
+	if (IsFakeClient(client))
+		return;
+
+	if (GetForcedNameByAuthId(auth, g_sForcedName, sizeof(g_sForcedName)))
+	{
+		DataPack pack = new DataPack();
+		pack.WriteCell(client);
+		pack.WriteString(g_sForcedName);
+		RequestFrame(OnFrameRequested, pack);
+	}
 }
 
 public Action CheckClientName(Handle timer, int userid)
 {
 	int client = GetClientOfUserId(userid);
 
-	if (client && GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
+	if (client && GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
 	{
 		DataPack pack = new DataPack();
 		pack.WriteCell(client);
@@ -128,6 +148,7 @@ stock void OnFrameRequested(DataPack pack)
 		return;
 
 	SetClientName(client, sName);
+	CPrintToChat(client, "%t", "ForcedName_ChatInfo");
 }
 
 public void OnClientPutInServer(int client)
@@ -155,14 +176,17 @@ public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcas
 		return Plugin_Handled;
 	}
 
-	if (!IsValidClient(client))
+	if (IsValidClient(client))
 	{
 		char NewName[64];
 		event.GetString("newname", NewName, sizeof(NewName));
-		if (GetClientAuthId(client, AuthId_Steam2, g_sSteamID, sizeof(g_sSteamID)) && g_SMsteamID.GetString(g_sSteamID, g_sForcedName, sizeof(g_sForcedName)))
+		if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
 		{
 			if (!StrEqual(NewName, g_sForcedName, false))
+			{
 				SetClientName(client, g_sForcedName);
+				CPrintToChat(client, "%t", "ForcedName_ChatInfo");
+			}
 		}
 	}
 
@@ -209,7 +233,7 @@ public Action Command_ForceName(int client, int args)
 	g_Kv.JumpToKey(g_sSteamID, true);
 	g_Kv.SetString("OriginalName", TargetName);
 	g_Kv.SetString("ForcedName", Arg2);
-	g_SMsteamID.SetString(g_sSteamID, Arg2);
+	CacheForcedName(g_sSteamID, Arg2);
 	g_Kv.SetString("AdminName", g_sAdminName);
 	FormatTime(g_sTime, sizeof(g_sTime), "%d.%m.%Y %R", GetTime());
 	g_Kv.SetString("Date", g_sTime);
@@ -229,6 +253,8 @@ public Action Command_ForcedNames(int client, int args)
 	Format(MenuBuffer, sizeof(MenuBuffer), "%T", "MenuTitle", client);
 	MainMenu.SetTitle(MenuBuffer);
 
+	bool bEmpty = true;
+
 	SetUpKeyValues();
 	if (!g_Kv.GotoFirstSubKey())
 	{
@@ -242,12 +268,20 @@ public Action Command_ForcedNames(int client, int args)
 			// Check if g_sForcedName is empty, if yes then skip this entry
 			if (g_sForcedName[0] == '\0')
 				continue;
+
+			bEmpty = false;
 			Format(MenuBuffer3, sizeof(MenuBuffer3), "%T", "MenuContent", client, g_sForcedName);
 			MainMenu.AddItem(g_sSteamID, MenuBuffer3);
 		}
 		while(g_Kv.GotoNextKey());
 	}
 	delete g_Kv;
+
+	if (bEmpty)
+	{
+		Format(MenuBuffer2, sizeof(MenuBuffer2), "%T", "MenuEmpty", client);
+		MainMenu.AddItem("", MenuBuffer2, ITEMDRAW_DISABLED);
+	}
 
 	MainMenu.ExitButton = true;
 	MainMenu.Display(client, MENU_TIME_FOREVER);
@@ -315,6 +349,11 @@ int SubMenuHandle(Menu menu, MenuAction action, int param1, int param2)
 				g_Kv.ExportToFile(g_sFilePath);
 				delete g_Kv;
 				g_SMsteamID.Remove(MenuChoice);
+
+				char sSteamIDVariant[32];
+				if (GetSteam2Variant(MenuChoice, sSteamIDVariant, sizeof(sSteamIDVariant)))
+					g_SMsteamID.Remove(sSteamIDVariant);
+
 				CReplyToCommand(param1, "%t", "NameDeleted");
 				Command_ForcedNames(param1, param2);
 			}
@@ -340,11 +379,63 @@ void GetNamesFromCfg()
 	do
 	{
 		g_Kv.GetSectionName(g_sSteamID, sizeof(g_sSteamID));
+
+		// Skip "banned" and "names" etc. sectionnames because they aren't steamids
+		if (strncmp(g_sSteamID, "STEAM_", 6, true) != 0)
+			continue;
+
 		g_Kv.GetString("ForcedName", g_sForcedName, sizeof(g_sForcedName));
-		g_SMsteamID.SetString(g_sSteamID, g_sForcedName);
+		CacheForcedName(g_sSteamID, g_sForcedName);
 	}
 	while(g_Kv.GotoNextKey());
 	delete g_Kv;
+}
+
+stock void CacheForcedName(const char[] authId, const char[] forcedName)
+{
+	g_SMsteamID.SetString(authId, forcedName);
+
+	char authVariant[32];
+	if (GetSteam2Variant(authId, authVariant, sizeof(authVariant)))
+		g_SMsteamID.SetString(authVariant, forcedName);
+}
+
+stock bool GetClientForcedName(int client, char[] forcedName, int forcedNameLen)
+{
+	char authId[32];
+
+	if (GetClientAuthId(client, AuthId_Steam2, authId, sizeof(authId)) && GetForcedNameByAuthId(authId, forcedName, forcedNameLen))
+		return true;
+
+	if (GetClientAuthId(client, AuthId_Steam3, authId, sizeof(authId)) && GetForcedNameByAuthId(authId, forcedName, forcedNameLen))
+		return true;
+
+	return false;
+}
+
+stock bool GetForcedNameByAuthId(const char[] authId, char[] forcedName, int forcedNameLen)
+{
+	if (g_SMsteamID.GetString(authId, forcedName, forcedNameLen))
+		return true;
+
+	char authVariant[32];
+	if (GetSteam2Variant(authId, authVariant, sizeof(authVariant)) && g_SMsteamID.GetString(authVariant, forcedName, forcedNameLen))
+		return true;
+
+	return false;
+}
+
+stock bool GetSteam2Variant(const char[] authId, char[] authVariant, int authVariantLen)
+{
+	if (strncmp(authId, "STEAM_0:", 8, false) == 0 || strncmp(authId, "STEAM_1:", 8, false) == 0)
+	{
+		strcopy(authVariant, authVariantLen, authId);
+		authVariant[6] = (authId[6] == '0') ? '1' : '0';
+		return true;
+	}
+
+	authVariant[0] = '\0';
+	return false;
 }
 
 void SetUpKeyValues()

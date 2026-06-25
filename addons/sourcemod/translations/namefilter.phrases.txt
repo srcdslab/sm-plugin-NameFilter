@@ -1,29 +1,33 @@
 "Phrases"
 {
+	"ForcedName_ChatInfo"
+	{
+		"en" "{green}[NameFilter] {white}Your name has been changed because it violates server rules. To request a name change, please contact an administrator."
+	}
 	"Usage"
 	{
-		"en" "{green}[SM] {white}Usage: sm_forcename <currentname> <forcedname>"
+		"en" "{green}[NameFilter] {white}Usage: sm_forcename <player> <new name>"
 	}
 	"InvalidSteamID"
 	{
-		"en" "{green}[SM] {white}This command can't be used on a player without a SteamID."
+		"en" "{green}[NameFilter] {red}Error: {white}This player does not have a valid SteamID."
 	}
 	"ForcedName"
 	{
 		"#format" "{1:s},{2:s},{3:s}"
-		"en" "{green}[SM] {white}Forced name {1} on player {2} ({3})"
+		"en" "{green}[NameFilter] {white}Name of {olive}{2} {white}({3}) has been set to {olive}{1}{white}."
 	}
 	"NameDeleted"
 	{
-		"en" "{green}[SM] {white}Name has been deleted!"
+		"en" "{green}[NameFilter] {white}Forced name entry has been removed successfully."
 	}
 	"MenuTitle"
 	{
-		"en" "Forced names:"
+		"en" "Forced Names"
 	}
 	"MenuEmpty"
 	{
-		"en" "There are no forced names!"
+		"en" "No forced names are currently active."
 	}
 	"MenuContent"
 	{
@@ -32,15 +36,15 @@
 	}
 	"SubMenuTitle"
 	{
-		"en" "Details about this forced name:"
+		"en" "Forced Name Details"
 	}
 	"SubMenuContent"
 	{
 		"#format" "{1:s},{2:s},{3:s},{4:s}"
-		"en" "\nForced name: {1}\nOriginal name: {2}\nAdmin name: {3}\nTime: {4}"
+		"en" "\nForced Name: {1}\nOriginal Name: {2}\nSet by Admin: {3}\nDate/Time: {4}"
 	}
 	"SubMenuDeleteName"
 	{
-		"en" "Choose to delete the name."
+		"en" "Remove this forced name"
 	}
 }
