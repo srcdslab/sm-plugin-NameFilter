@@ -104,22 +104,8 @@ public void OnClientConnected(int client)
 		RequestFrame(OnFrameRequested, pack);
 	}
 
-	if (IsValidClient(client))
+	if (IsClientConnected(client))
 		CreateTimer(3.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public void OnClientAuthorized(int client, const char[] auth)
-{
-	if (IsFakeClient(client))
-		return;
-
-	if (GetForcedNameByAuthId(auth, g_sForcedName, sizeof(g_sForcedName)))
-	{
-		DataPack pack = new DataPack();
-		pack.WriteCell(client);
-		pack.WriteString(g_sForcedName);
-		RequestFrame(OnFrameRequested, pack);
-	}
 }
 
 public Action CheckClientName(Handle timer, int userid)
@@ -164,11 +150,18 @@ public void OnClientPutInServer(int client)
 		g_iBlockNameChangeEvents[client] = 2;
 		SetClientName(client, sName);
 	}
+	else if (GetClientForcedName(client, g_sForcedName, sizeof(g_sForcedName)))
+	{
+		g_iBlockNameChangeEvents[client] = 2;
+		SetClientName(client, g_sForcedName);
+		CPrintToChat(client, "%t", "ForcedName_ChatInfo");
+	}
 }
 
 public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
+
 	if (g_iBlockNameChangeEvents[client])
 	{
 		g_iBlockNameChangeEvents[client]--;
