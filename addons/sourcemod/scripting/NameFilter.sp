@@ -221,10 +221,10 @@ public Action Command_ForceName(int client, int args)
 	if (g_iTarget == -1)
 		return Plugin_Handled;
 
-	GetClientName(client, g_sAdminName, sizeof(g_sAdminName));
-
 	if (client <= 0)
 		Format(g_sAdminName, sizeof(g_sAdminName), "Console/Server");
+	else
+		GetClientName(client, g_sAdminName, sizeof(g_sAdminName));
 
 	GetClientName(g_iTarget, TargetName, sizeof(TargetName));
 
