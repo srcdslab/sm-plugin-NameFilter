@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.0"
+	version = "2.1.1"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -221,10 +221,10 @@ public Action Command_ForceName(int client, int args)
 	if (g_iTarget == -1)
 		return Plugin_Handled;
 
-	GetClientName(client, g_sAdminName, sizeof(g_sAdminName));
-
 	if (client <= 0)
 		Format(g_sAdminName, sizeof(g_sAdminName), "Console/Server");
+	else
+		GetClientName(client, g_sAdminName, sizeof(g_sAdminName));
 
 	GetClientName(g_iTarget, TargetName, sizeof(TargetName));
 
