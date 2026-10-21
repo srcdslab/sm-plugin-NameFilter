@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.1"
+	version = "2.1.2"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -180,7 +180,7 @@ public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcas
 	if (g_iBlockNameChangeEvents[client])
 	{
 		g_iBlockNameChangeEvents[client]--;
-		SetEventBroadcast(event, true);
+		event.BroadcastDisabled = true;
 		return Plugin_Handled;
 	}
 
@@ -193,7 +193,7 @@ public Action Event_ChangeName(Event event, const char[] name, bool dontBroadcas
 			if (!StrEqual(NewName, g_sForcedName, false))
 			{
 				g_iBlockNameChangeEvents[client] = 2;
- 				SetEventBroadcast(event, true);
+ 				event.BroadcastDisabled = true;
 				SetClientName(client, g_sForcedName);
 				CPrintToChat(client, "%t", "ForcedName_ChatInfo");
 			}
@@ -475,26 +475,27 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 
 	if (GetUserMessageType() == UM_Protobuf)
 	{
-		PbReadString(msg, "msg_name", sMessage, sizeof(sMessage));
+		Protobuf pb = UserMessageToProtobuf(msg);
+		pb.ReadString("msg_name", sMessage, sizeof(sMessage));
 
 		if (!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
 			return Plugin_Continue;
 
-		client = PbReadInt(msg, "ent_idx");
-		PbReadString(msg, "params", sOldName, sizeof(sOldName), 1);
-		PbReadString(msg, "params", sNewName, sizeof(sNewName), 2);
+		client = pb.ReadInt("ent_idx");
+		pb.ReadString("params", sOldName, sizeof(sOldName), 1);
+		pb.ReadString("params", sNewName, sizeof(sNewName), 2);
 	}
 	else
 	{
-		client = BfReadByte(msg);
-		BfReadByte(msg);
-		BfReadString(msg, sMessage, sizeof(sMessage));
+		client = msg.ReadByte();
+		msg.ReadByte();
+		msg.ReadString(sMessage, sizeof(sMessage));
 
 		if (!(sMessage[0] == '#' && StrContains(sMessage, "Name_Change")))
 			return Plugin_Continue;
 
-		BfReadString(msg, sOldName, sizeof(sOldName));
-		BfReadString(msg, sNewName, sizeof(sNewName));
+		msg.ReadString(sOldName, sizeof(sOldName));
+		msg.ReadString(sNewName, sizeof(sNewName));
 	}
 
 	if (g_iBlockNameChangeEvents[client])
@@ -548,15 +549,15 @@ public Action Timer_ChangeName(Handle timer, any data)
 
 void LoadConfig()
 {
-	if (g_FilterExpr != INVALID_HANDLE)
-		CloseHandle(g_FilterExpr);
+	if (g_FilterExpr != null)
+		delete g_FilterExpr;
 
 	if (g_BannedExprs)
 	{
 		for (int i = 0; i < g_BannedExprs.Length; i++)
 		{
-			Handle hRegex = g_BannedExprs.Get(i);
-			CloseHandle(hRegex);
+			Regex hRegex = g_BannedExprs.Get(i);
+			delete hRegex;
 		}
 	}
 
@@ -583,7 +584,7 @@ void LoadConfig()
 
 	char sError[256];
 	RegexError iError;
-	g_FilterExpr = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
+	g_FilterExpr = new Regex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
 	if (iError != REGEX_ERROR_NONE)
 	{
 		delete g_Kv;
@@ -599,7 +600,7 @@ void LoadConfig()
 			{
 				g_Kv.GetString(NULL_STRING, sBuffer, sizeof(sBuffer));
 				NF_DebugLog("Loaded banned regex: %s", sBuffer);
-				Handle hRegex = CompileRegex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
+				Regex hRegex = new Regex(sBuffer, PCRE_UTF8, sError, sizeof(sError), iError);
 				if (iError != REGEX_ERROR_NONE)
 					LogError("Error parsing banned filter: %s", sError);
 				else
@@ -651,7 +652,7 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 		if (!strlen(sName))
 			break;
 
-		int Match = MatchRegex(g_FilterExpr, sName, iError);
+		int Match = g_FilterExpr.Match(sName, iError);
 		if (iError != REGEX_ERROR_NONE)
 		{
 			if (iError == REGEX_ERROR_BADUTF8)
@@ -675,7 +676,7 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 		for (int i = 0; i < Match; i++)
 		{
 			char sMatch[MAX_NAME_LENGTH];
-			if (GetRegexSubString(g_FilterExpr, i, sMatch, sizeof(sMatch)))
+			if (g_FilterExpr.GetSubString(i, sMatch, sizeof(sMatch)))
 			{
 				NF_DebugLog("Matched substring: '%s'", sMatch);
 				if (ReplaceStringEx(sName, Length, sMatch, g_sFilterChar) != -1)
@@ -694,8 +695,8 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 			if (!strlen(sName))
 				break;
 
-			Handle hRegex = g_BannedExprs.Get(i);
-			int Match = MatchRegex(hRegex, sName, iError);
+			Regex hRegex = g_BannedExprs.Get(i);
+			int Match = hRegex.Match(sName, iError);
 			if (iError != REGEX_ERROR_NONE)
 			{
 				LogError("Regex Error: %d", iError);
