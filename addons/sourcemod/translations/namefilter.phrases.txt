@@ -113,4 +113,15 @@
 		"pt" "Remover este nome forçado"
 		"chi" "移除此强制名字"
 	}
+
+	"NF_Config_Reloaded"
+	{
+		"en"		"[NameFilter] Configuration reloaded."
+		"fr"		"[NameFilter] Configuration rechargée."
+		"ru"		"[NameFilter] Конфигурация перезагружена."
+		"es"		"[NameFilter] Configuración recargada."
+		"de"		"[NameFilter] Konfiguration neu geladen."
+		"pt"		"[NameFilter] Configuração recarregada."
+		"chi"		"[NameFilter] 配置已重新加载。"
+	}
 }

@@ -302,7 +302,7 @@ public Action Command_ForcedNames(int client, int args)
 public Action Command_NameFilterReload(int client, int args)
 {
 	LoadConfig();
-	CReplyToCommand(client, "[NameFilter] Configuration reloaded.");
+	CReplyToCommand(client, "%t", "NF_Config_Reloaded");
 	return Plugin_Handled;
 }
 
