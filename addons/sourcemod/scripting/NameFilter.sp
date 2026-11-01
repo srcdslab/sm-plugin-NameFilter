@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.2"
+	version = "2.1.3"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -310,7 +310,7 @@ int MenuHandle(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
-		char MenuBuffer[128], MenuChoice[32], MenuBuffer2[128], MenuBuffer3[32];
+		char MenuBuffer[128], MenuChoice[32], MenuBuffer2[512], MenuBuffer3[128];
 
 		Menu SubMenu = new Menu(SubMenuHandle);
 

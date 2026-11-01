@@ -3,48 +3,114 @@
 	"ForcedName_ChatInfo"
 	{
 		"en" "{green}[NameFilter] {white}Your name has been changed because it violates server rules. To request a name change, please contact an administrator."
+		"fr" "{green}[NameFilter] {white}Votre pseudo a été changé car il enfreint les règles du serveur. Pour demander un changement de pseudo, contactez un administrateur."
+		"ru" "{green}[NameFilter] {white}Ваш ник был изменён, так как он нарушает правила сервера. Чтобы запросить смену ника, обратитесь к администратору."
+		"es" "{green}[NameFilter] {white}Tu nombre ha sido cambiado porque infringe las reglas del servidor. Para solicitar un cambio de nombre, contacta con un administrador."
+		"de" "{green}[NameFilter] {white}Dein Name wurde geändert, da er gegen die Serverregeln verstößt. Um eine Namensänderung zu beantragen, wende dich an einen Admin."
+		"pt" "{green}[NameFilter] {white}Seu nome foi alterado porque viola as regras do servidor. Para solicitar uma mudança de nome, contate um administrador."
+		"chi" "{green}[NameFilter] {white}你的名字违反了服务器规则，已被更改。如需更改名字，请联系管理员。"
 	}
 	"Usage"
 	{
 		"en" "{green}[NameFilter] {white}Usage: sm_forcename <player> <new name>"
+		"fr" "{green}[NameFilter] {white}Utilisation : sm_forcename <joueur> <nouveau pseudo>"
+		"ru" "{green}[NameFilter] {white}Использование: sm_forcename <игрок> <новый ник>"
+		"es" "{green}[NameFilter] {white}Uso: sm_forcename <jugador> <nuevo nombre>"
+		"de" "{green}[NameFilter] {white}Verwendung: sm_forcename <Spieler> <neuer Name>"
+		"pt" "{green}[NameFilter] {white}Uso: sm_forcename <jogador> <novo nome>"
+		"chi" "{green}[NameFilter] {white}用法：sm_forcename <玩家> <新名字>"
 	}
 	"InvalidSteamID"
 	{
 		"en" "{green}[NameFilter] {red}Error: {white}This player does not have a valid SteamID."
+		"fr" "{green}[NameFilter] {red}Erreur : {white}Ce joueur n'a pas de SteamID valide."
+		"ru" "{green}[NameFilter] {red}Ошибка: {white}У этого игрока нет действительного SteamID."
+		"es" "{green}[NameFilter] {red}Error: {white}Este jugador no tiene un SteamID válido."
+		"de" "{green}[NameFilter] {red}Fehler: {white}Dieser Spieler hat keine gültige SteamID."
+		"pt" "{green}[NameFilter] {red}Erro: {white}Este jogador não tem um SteamID válido."
+		"chi" "{green}[NameFilter] {red}错误：{white}该玩家没有有效的SteamID。"
 	}
 	"ForcedName"
 	{
 		"#format" "{1:s},{2:s},{3:s}"
 		"en" "{green}[NameFilter] {white}Name of {olive}{2} {white}({3}) has been set to {olive}{1}{white}."
+		"fr" "{green}[NameFilter] {white}Le pseudo de {olive}{2} {white}({3}) a été défini sur {olive}{1}{white}."
+		"ru" "{green}[NameFilter] {white}Ник игрока {olive}{2} {white}({3}) изменён на {olive}{1}{white}."
+		"es" "{green}[NameFilter] {white}El nombre de {olive}{2} {white}({3}) se ha establecido como {olive}{1}{white}."
+		"de" "{green}[NameFilter] {white}Der Name von {olive}{2} {white}({3}) wurde auf {olive}{1} {white}gesetzt."
+		"pt" "{green}[NameFilter] {white}O nome de {olive}{2} {white}({3}) foi definido como {olive}{1}{white}."
+		"chi" "{green}[NameFilter] {white}已将{olive}{2} {white}({3})的名字设为{olive}{1}{white}。"
 	}
 	"NameDeleted"
 	{
 		"en" "{green}[NameFilter] {white}Forced name entry has been removed successfully."
+		"fr" "{green}[NameFilter] {white}Le pseudo forcé a bien été supprimé."
+		"ru" "{green}[NameFilter] {white}Принудительный ник успешно удалён."
+		"es" "{green}[NameFilter] {white}El nombre forzado se ha eliminado correctamente."
+		"de" "{green}[NameFilter] {white}Der erzwungene Name wurde erfolgreich entfernt."
+		"pt" "{green}[NameFilter] {white}O nome forçado foi removido com sucesso."
+		"chi" "{green}[NameFilter] {white}已成功移除强制名字。"
 	}
 	"MenuTitle"
 	{
 		"en" "Forced Names"
+		"fr" "Pseudos forcés"
+		"ru" "Принудительные ники"
+		"es" "Nombres forzados"
+		"de" "Erzwungene Namen"
+		"pt" "Nomes forçados"
+		"chi" "强制名字"
 	}
 	"MenuEmpty"
 	{
 		"en" "No forced names are currently active."
+		"fr" "Aucun pseudo forcé actif."
+		"ru" "Нет активных принудительных ников."
+		"es" "No hay nombres forzados activos."
+		"de" "Keine erzwungenen Namen aktiv."
+		"pt" "Nenhum nome forçado ativo."
+		"chi" "当前没有强制名字。"
 	}
 	"MenuContent"
 	{
 		"#format" "{1:s}"
 		"en" "{1}"
+		"fr" "{1}"
+		"ru" "{1}"
+		"es" "{1}"
+		"de" "{1}"
+		"pt" "{1}"
+		"chi" "{1}"
 	}
 	"SubMenuTitle"
 	{
 		"en" "Forced Name Details"
+		"fr" "Détails du pseudo forcé"
+		"ru" "Детали принудительного ника"
+		"es" "Detalles del nombre forzado"
+		"de" "Details zum erzwungenen Namen"
+		"pt" "Detalhes do nome forçado"
+		"chi" "强制名字详情"
 	}
 	"SubMenuContent"
 	{
 		"#format" "{1:s},{2:s},{3:s},{4:s}"
 		"en" "\nForced Name: {1}\nOriginal Name: {2}\nSet by Admin: {3}\nDate/Time: {4}"
+		"fr" "\nPseudo forcé : {1}\nPseudo d'origine : {2}\nDéfini par : {3}\nDate/Heure : {4}"
+		"ru" "\nПринудительный ник: {1}\nИсходный ник: {2}\nУстановил админ: {3}\nДата/время: {4}"
+		"es" "\nNombre forzado: {1}\nNombre original: {2}\nEstablecido por: {3}\nFecha/Hora: {4}"
+		"de" "\nErzwungener Name: {1}\nUrsprünglicher Name: {2}\nGesetzt von Admin: {3}\nDatum/Uhrzeit: {4}"
+		"pt" "\nNome forçado: {1}\nNome original: {2}\nDefinido pelo admin: {3}\nData/Hora: {4}"
+		"chi" "\n强制名字：{1}\n原名字：{2}\n设置的管理员：{3}\n日期/时间：{4}"
 	}
 	"SubMenuDeleteName"
 	{
 		"en" "Remove this forced name"
+		"fr" "Supprimer ce pseudo forcé"
+		"ru" "Удалить этот принудительный ник"
+		"es" "Eliminar este nombre forzado"
+		"de" "Diesen erzwungenen Namen entfernen"
+		"pt" "Remover este nome forçado"
+		"chi" "移除此强制名字"
 	}
 }
