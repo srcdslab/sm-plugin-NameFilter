@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.3"
+	version = "2.1.4"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -302,7 +302,7 @@ public Action Command_ForcedNames(int client, int args)
 public Action Command_NameFilterReload(int client, int args)
 {
 	LoadConfig();
-	CReplyToCommand(client, "[NameFilter] Configuration reloaded.");
+	CReplyToCommand(client, "[NameFilter] %t", "ConfigReloaded");
 	return Plugin_Handled;
 }
 
@@ -364,7 +364,7 @@ int SubMenuHandle(Menu menu, MenuAction action, int param1, int param2)
 				if (GetSteam2Variant(MenuChoice, sSteamIDVariant, sizeof(sSteamIDVariant)))
 					g_SMsteamID.Remove(sSteamIDVariant);
 
-				CReplyToCommand(param1, "%t", "NameDeleted");
+				CPrintToChat(param1, "%t", "NameDeleted");
 				Command_ForcedNames(param1, param2);
 			}
 		}
@@ -520,10 +520,10 @@ public Action UserMessage_SayText2(UserMsg msg_id, BfRead msg, const int[] playe
 			SetClientName(client, sOldName);
 
 			DataPack pack = new DataPack();
-			pack.WriteCell(client);
+			pack.WriteCell(GetClientUserId(client));
 			pack.WriteString(sNewName);
 
-			CreateTimer(0.1, Timer_ChangeName, pack, TIMER_FLAG_NO_MAPCHANGE);
+			CreateTimer(0.1, Timer_ChangeName, pack, TIMER_FLAG_NO_MAPCHANGE | TIMER_DATA_HNDL_CLOSE);
 
 			return Plugin_Handled;
 		}
@@ -536,11 +536,12 @@ public Action Timer_ChangeName(Handle timer, any data)
 	DataPack pack = view_as<DataPack>(data);
 	pack.Reset();
 
-	int client = pack.ReadCell();
+	int client = GetClientOfUserId(pack.ReadCell());
 	char sName[MAX_NAME_LENGTH];
 	pack.ReadString(sName, sizeof(sName));
 
-	delete pack;
+	if (!client)
+		return Plugin_Stop;
 
 	SetClientName(client, sName);
 

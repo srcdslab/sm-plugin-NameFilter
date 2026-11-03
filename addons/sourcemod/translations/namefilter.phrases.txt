@@ -51,6 +51,16 @@
 		"pt" "{green}[NameFilter] {white}O nome forçado foi removido com sucesso."
 		"chi" "{green}[NameFilter] {white}已成功移除强制名字。"
 	}
+	"ConfigReloaded"
+	{
+		"en" "Configuration reloaded."
+		"fr" "Configuration rechargée."
+		"ru" "Конфигурация перезагружена."
+		"es" "Configuración recargada."
+		"de" "Konfiguration neu geladen."
+		"pt" "Configuração recarregada."
+		"chi" "配置已重新加载。"
+	}
 	"MenuTitle"
 	{
 		"en" "Forced Names"
