@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.4"
+	version = "2.1.5"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
