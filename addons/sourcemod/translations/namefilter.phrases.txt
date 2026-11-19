@@ -9,6 +9,12 @@
 		"de" "{green}[NameFilter] {white}Dein Name wurde geändert, da er gegen die Serverregeln verstößt. Um eine Namensänderung zu beantragen, wende dich an einen Admin."
 		"pt" "{green}[NameFilter] {white}Seu nome foi alterado porque viola as regras do servidor. Para solicitar uma mudança de nome, contate um administrador."
 		"chi" "{green}[NameFilter] {white}你的名字违反了服务器规则，已被更改。如需更改名字，请联系管理员。"
+		"pl" "{green}[NameFilter] {white}Twój nick został zmieniony, ponieważ łamie zasady serwera. Aby poprosić o zmianę nicku, skontaktuj się z administratorem."
+		"tr" "{green}[NameFilter] {white}Adın sunucu kurallarını ihlal ettiği için değiştirildi. Ad değişikliği talep etmek için lütfen bir yönetici ile iletişime geç."
+		"it" "{green}[NameFilter] {white}Il tuo nome è stato cambiato perché viola le regole del server. Per richiedere un cambio di nome, contatta un amministratore."
+		"ua" "{green}[NameFilter] {white}Твій нік було змінено, бо він порушує правила сервера. Щоб попросити змінити нік, звернись до адміністратора."
+		"zho" "{green}[NameFilter] {white}你的名字因違反伺服器規則而被更改。如需申請更改名字，請聯繫管理員。"
+		"cze" "{green}[NameFilter] {white}Tvoje jméno bylo změněno, protože porušuje pravidla serveru. Pokud chceš požádat o změnu jména, kontaktuj administrátora."
 	}
 	"Usage"
 	{
@@ -19,6 +25,12 @@
 		"de" "{green}[NameFilter] {white}Verwendung: sm_forcename <Spieler> <neuer Name>"
 		"pt" "{green}[NameFilter] {white}Uso: sm_forcename <jogador> <novo nome>"
 		"chi" "{green}[NameFilter] {white}用法：sm_forcename <玩家> <新名字>"
+		"pl" "{green}[NameFilter] {white}Użycie: sm_forcename <gracz> <nowy nick>"
+		"tr" "{green}[NameFilter] {white}Kullanım: sm_forcename <oyuncu> <yeni ad>"
+		"it" "{green}[NameFilter] {white}Uso: sm_forcename <giocatore> <nuovo nome>"
+		"ua" "{green}[NameFilter] {white}Використання: sm_forcename <гравець> <новий нік>"
+		"zho" "{green}[NameFilter] {white}用法：sm_forcename <玩家> <新名字>"
+		"cze" "{green}[NameFilter] {white}Použití: sm_forcename <hráč> <nové jméno>"
 	}
 	"InvalidSteamID"
 	{
@@ -29,6 +41,12 @@
 		"de" "{green}[NameFilter] {red}Fehler: {white}Dieser Spieler hat keine gültige SteamID."
 		"pt" "{green}[NameFilter] {red}Erro: {white}Este jogador não tem um SteamID válido."
 		"chi" "{green}[NameFilter] {red}错误：{white}该玩家没有有效的SteamID。"
+		"pl" "{green}[NameFilter] {red}Błąd: {white}Ten gracz nie ma prawidłowego SteamID."
+		"tr" "{green}[NameFilter] {red}Hata: {white}Bu oyuncunun geçerli bir SteamID'si yok."
+		"it" "{green}[NameFilter] {red}Errore: {white}Questo giocatore non ha uno SteamID valido."
+		"ua" "{green}[NameFilter] {red}Помилка: {white}У цього гравця немає дійсного SteamID."
+		"zho" "{green}[NameFilter] {red}錯誤：{white}該玩家沒有有效的 SteamID。"
+		"cze" "{green}[NameFilter] {red}Chyba: {white}Tento hráč nemá platné SteamID."
 	}
 	"ForcedName"
 	{
@@ -40,6 +58,12 @@
 		"de" "{green}[NameFilter] {white}Der Name von {olive}{2} {white}({3}) wurde auf {olive}{1} {white}gesetzt."
 		"pt" "{green}[NameFilter] {white}O nome de {olive}{2} {white}({3}) foi definido como {olive}{1}{white}."
 		"chi" "{green}[NameFilter] {white}已将{olive}{2} {white}({3})的名字设为{olive}{1}{white}。"
+		"pl" "{green}[NameFilter] {white}Nick gracza {olive}{2} {white}({3}) został ustawiony na {olive}{1}{white}."
+		"tr" "{green}[NameFilter] {white}{olive}{2} {white}({3}) oyuncusunun adı {olive}{1} {white}olarak ayarlandı."
+		"it" "{green}[NameFilter] {white}Il nome di {olive}{2} {white}({3}) è stato impostato su {olive}{1}{white}."
+		"ua" "{green}[NameFilter] {white}Нік гравця {olive}{2} {white}({3}) змінено на {olive}{1}{white}."
+		"zho" "{green}[NameFilter] {white}已將{olive}{2} {white}({3})的名字設為{olive}{1}{white}。"
+		"cze" "{green}[NameFilter] {white}Jméno hráče {olive}{2} {white}({3}) bylo nastaveno na {olive}{1}{white}."
 	}
 	"NameDeleted"
 	{
@@ -50,6 +74,12 @@
 		"de" "{green}[NameFilter] {white}Der erzwungene Name wurde erfolgreich entfernt."
 		"pt" "{green}[NameFilter] {white}O nome forçado foi removido com sucesso."
 		"chi" "{green}[NameFilter] {white}已成功移除强制名字。"
+		"pl" "{green}[NameFilter] {white}Wpis wymuszonego nicku został pomyślnie usunięty."
+		"tr" "{green}[NameFilter] {white}Zorunlu ad kaydı başarıyla kaldırıldı."
+		"it" "{green}[NameFilter] {white}La voce del nome forzato è stata rimossa con successo."
+		"ua" "{green}[NameFilter] {white}Запис про примусовий нік успішно видалено."
+		"zho" "{green}[NameFilter] {white}已成功移除強制名字記錄。"
+		"cze" "{green}[NameFilter] {white}Záznam o vynuceném jménu byl úspěšně odstraněn."
 	}
 	"ConfigReloaded"
 	{
@@ -60,6 +90,12 @@
 		"de" "Konfiguration neu geladen."
 		"pt" "Configuração recarregada."
 		"chi" "配置已重新加载。"
+		"pl" "Konfiguracja została przeładowana."
+		"tr" "Yapılandırma yeniden yüklendi."
+		"it" "Configurazione ricaricata."
+		"ua" "Конфігурацію перезавантажено."
+		"zho" "設定已重新載入。"
+		"cze" "Konfigurace byla znovu načtena."
 	}
 	"MenuTitle"
 	{
@@ -70,6 +106,12 @@
 		"de" "Erzwungene Namen"
 		"pt" "Nomes forçados"
 		"chi" "强制名字"
+		"pl" "Wymuszone nicki"
+		"tr" "Zorunlu Adlar"
+		"it" "Nomi forzati"
+		"ua" "Примусові ніки"
+		"zho" "強制名字"
+		"cze" "Vynucená jména"
 	}
 	"MenuEmpty"
 	{
@@ -80,6 +122,12 @@
 		"de" "Keine erzwungenen Namen aktiv."
 		"pt" "Nenhum nome forçado ativo."
 		"chi" "当前没有强制名字。"
+		"pl" "Obecnie nie ma aktywnych wymuszonych nicków."
+		"tr" "Şu anda etkin zorunlu ad yok."
+		"it" "Al momento non ci sono nomi forzati attivi."
+		"ua" "Наразі немає активних примусових ніків."
+		"zho" "目前沒有生效的強制名字。"
+		"cze" "Momentálně nejsou aktivní žádná vynucená jména."
 	}
 	"MenuContent"
 	{
@@ -91,6 +139,12 @@
 		"de" "{1}"
 		"pt" "{1}"
 		"chi" "{1}"
+		"pl" "{1}"
+		"tr" "{1}"
+		"it" "{1}"
+		"ua" "{1}"
+		"zho" "{1}"
+		"cze" "{1}"
 	}
 	"SubMenuTitle"
 	{
@@ -101,6 +155,12 @@
 		"de" "Details zum erzwungenen Namen"
 		"pt" "Detalhes do nome forçado"
 		"chi" "强制名字详情"
+		"pl" "Szczegóły wymuszonego nicku"
+		"tr" "Zorunlu Ad Ayrıntıları"
+		"it" "Dettagli del nome forzato"
+		"ua" "Деталі примусового ніка"
+		"zho" "強制名字詳情"
+		"cze" "Podrobnosti o vynuceném jménu"
 	}
 	"SubMenuContent"
 	{
@@ -112,6 +172,12 @@
 		"de" "\nErzwungener Name: {1}\nUrsprünglicher Name: {2}\nGesetzt von Admin: {3}\nDatum/Uhrzeit: {4}"
 		"pt" "\nNome forçado: {1}\nNome original: {2}\nDefinido pelo admin: {3}\nData/Hora: {4}"
 		"chi" "\n强制名字：{1}\n原名字：{2}\n设置的管理员：{3}\n日期/时间：{4}"
+		"pl" "\nWymuszony nick: {1}\nOryginalny nick: {2}\nUstawił admin: {3}\nData/godzina: {4}"
+		"tr" "\nZorunlu Ad: {1}\nOrijinal Ad: {2}\nAyarlayan Yönetici: {3}\nTarih/Saat: {4}"
+		"it" "\nNome forzato: {1}\nNome originale: {2}\nImpostato dall'admin: {3}\nData/Ora: {4}"
+		"ua" "\nПримусовий нік: {1}\nОригінальний нік: {2}\nВстановив адмін: {3}\nДата/час: {4}"
+		"zho" "\n強制名字：{1}\n原名字：{2}\n設定的管理員：{3}\n日期/時間：{4}"
+		"cze" "\nVynucené jméno: {1}\nPůvodní jméno: {2}\nNastavil admin: {3}\nDatum/čas: {4}"
 	}
 	"SubMenuDeleteName"
 	{
@@ -122,5 +188,11 @@
 		"de" "Diesen erzwungenen Namen entfernen"
 		"pt" "Remover este nome forçado"
 		"chi" "移除此强制名字"
+		"pl" "Usuń ten wymuszony nick"
+		"tr" "Bu zorunlu adı kaldır"
+		"it" "Rimuovi questo nome forzato"
+		"ua" "Видалити цей примусовий нік"
+		"zho" "移除此強制名字"
+		"cze" "Odebrat toto vynucené jméno"
 	}
 }
