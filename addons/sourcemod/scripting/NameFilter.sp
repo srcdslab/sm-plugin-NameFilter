@@ -32,7 +32,7 @@ public Plugin myinfo =
 	author = "BotoX, .Rushaway, ire.",
 	description = "Filters player names + Force names",
 	url = "https://github.com/srcdslab/sm-plugin-NameFilter",
-	version = "2.1.6"
+	version = "2.1.7"
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -95,6 +95,17 @@ public void OnClientConnected(int client)
 
 	if (!IsValidClient(client))
 	{
+		// Until the client is in game the engine shows its raw name in the
+		// connect, kick and disconnect messages, so filter it right away.
+		// The player entity does not exist yet: the game sends no name change
+		// event or message, so g_iBlockNameChangeEvents must stay at 0 here
+		// (a leftover count would let the next real name change skip the filter).
+		// OnClientPutInServer filters the name again.
+		char sConnectName[MAX_NAME_LENGTH];
+		GetClientName(client, sConnectName, sizeof(sConnectName));
+		if (FilterName(client, sConnectName))
+			SetClientName(client, sConnectName);
+
 		CreateTimer(3.0, CheckClientName, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		return;
 	}
@@ -646,6 +657,12 @@ bool FilterName(int client, char[] sName, int Length = MAX_NAME_LENGTH)
 
 	NF_DebugLog("FilterName in: '%s' (client %d)", sName, client);
 
+	if (StripControlChars(sName))
+	{
+		bChanged = true;
+		NF_DebugLog("Control characters replaced -> '%s'", sName);
+	}
+
 	// SourceMod Regex bug
 	int Guard;
 	for (Guard = 0; Guard < 100; Guard++)
@@ -800,6 +817,29 @@ stock void NF_DebugLog(const char[] fmt, any ...)
 	static char buffer[256];
 	VFormat(buffer, sizeof(buffer), fmt, 2);
 	LogMessage("[NameFilter][DEBUG] %s", buffer);
+}
+
+// Control characters (newline, carriage return, tab...) let a name forge whole
+// lines in the console, the chat and the server logs read by stats daemons.
+// They are never valid in a name, whatever the "filter" regex allows (a "\s"
+// in the config reaches PCRE as-is and lets them through), so they are always
+// replaced by the censor character. Bytes below 0x20 and 0x7F are never part
+// of a UTF-8 multibyte sequence, so they can be replaced one by one.
+stock bool StripControlChars(char[] name)
+{
+	int iCensor = g_sFilterChar[0] ? g_sFilterChar[0] : ' ';
+	bool bChanged = false;
+
+	for (int i = 0; name[i] != '\0'; i++)
+	{
+		if (name[i] < 0x20 || name[i] == 0x7F)
+		{
+			name[i] = iCensor;
+			bChanged = true;
+		}
+	}
+
+	return bChanged;
 }
 
 stock bool IsNameOnlyWhitespace(const char[] name)
