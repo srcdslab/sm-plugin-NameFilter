@@ -827,7 +827,10 @@ stock void NF_DebugLog(const char[] fmt, any ...)
 // of a UTF-8 multibyte sequence, so they can be replaced one by one.
 stock bool StripControlChars(char[] name)
 {
-	char cCensor = g_sFilterChar[0] ? g_sFilterChar[0] : ' ';
+	char cCensor = ' ';
+	if (g_sFilterChar[0] != '\0')
+		cCensor = g_sFilterChar[0];
+
 	bool bChanged = false;
 
 	for (int i = 0; name[i] != '\0'; i++)
